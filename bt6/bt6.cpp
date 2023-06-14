@@ -18,10 +18,7 @@ public:
 
     static std::vector<Model*> models;
 
-    static void addModel(Model* model) 
-    {
-        models.push_back(model);
-    }
+    
 
     static void printModel() 
     {
@@ -34,6 +31,8 @@ public:
         }
     }
 };
+std::vector<Model*> Model::models;
+
 
 class Product 
 {
@@ -96,7 +95,8 @@ public:
     }
 };
 
-class Store {
+class Store
+{
 private:
     std::vector<Product*> products;
     static Store* instance;
@@ -122,13 +122,60 @@ public:
     }
 };
 Store* Store::instance = nullptr;
-std::vector<Model*> Model::models;
+
+class Factory
+{
+private:
+    static std::map<int, Model*> models;
+    static std::map<std::string, Model*> model_names;
+public:
+    static void addModel(Model* model) {
+        models[model->id] = model;
+        model_names[model->name] = model;
+    }
+    static Product* createProduct(int model_id)
+    {
+        Model* model = models[model_id];
+        switch (model->product_type)
+        {
+        case Model::CHAIR:
+            return new Chair(model->id, model->name, model->reference_price, "material", "color");
+        case Model::TABLE:
+            return new Table(model->id, model->name, model->reference_price, "material", "shape");
+        case Model::CABINET:
+            return new Cabinet(model->id, model->name, model->reference_price, "material", 4);
+        default:
+            return nullptr;
+            break;
+        }
+    }
+    static Product* createProduct(std::string model_name) {
+        Model* model = model_names[model_name];
+        return createProduct(model->id);
+    }
+};
+std::map<int, Model*> Factory::models;
+std::map<std::string, Model*> Factory::model_names;
 int main()
 {
     Model* model1 = new Model(1, "chair a", 100, Model::CHAIR);
+    Model* model2 = new Model(2, "Table b", 100, Model::TABLE);
+    Model* model3 = new Model(3, "Cabinet a", 100, Model::CABINET);
 
-    Model::addModel(model1);
+   /* Model::addModel(model1);
+    Model::addModel(model2);
+    Model::addModel(model3);*/
+
+    Factory::addModel(model1);
+    Product* product1 = Factory::createProduct(1);
+    Product* product2 = Factory::createProduct("Table B");
+
+    Store* store = Store::getInstance();
+    store->addProduct(product1);
+    store->addProduct(product2);
+
     Model::printModel();
+    store->printProductList();
     return 0;
 }
 
