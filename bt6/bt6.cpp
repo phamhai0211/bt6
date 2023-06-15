@@ -1,191 +1,252 @@
-// bt6.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
+#include <memory>
 #include <string>
-#include <map>
-class Model
-{
+#include <unordered_map>
+
+enum class ProductType {
+    CHAIR,
+    TABLE,
+    CABINET
+};
+
+class Model {
 public:
-    int id;
-    std::string name;
-    int reference_price;
-    enum ProductType{CHAIR, TABLE, CABINET} product_type;
+    Model(int id, const std::string& name, int referencePrice, ProductType type)
+        : _m_id(id)
+        , _m_name(name)
+        , _m_referencePrice(referencePrice)
+        , _m_type(type)
+    {
+    }
+    ~Model() {}
+    int getId() const {
+        return _m_id;
+    }
 
-    Model(int id, std::string name, int reference_price, ProductType product_type)
-        : id(id), name(name),reference_price(reference_price),product_type(product_type){}
+    const std::string& getName() const {
+        return _m_name;
+    }
 
-    static std::vector<Model*> models;
+    int getReferencePrice() const {
+        return _m_referencePrice;
+    }
+
+    ProductType getType() const {
+        return _m_type;
+    }
+
+private:
+    int _m_id;
+    std::string _m_name;
+    int _m_referencePrice;
+    ProductType _m_type;
+};
+
+class Product {
+public:
+    Product(int id, const std::string& name, int price)
+        : _m_id(id)
+        , _m_name(name)
+        , _m_price(price)
+    {
+    }
+    ~Product(){}
+    int getId() const {
+        return _m_id;
+    }
+
+    const std::string& getName() const {
+        return _m_name;
+    }
+
+    int getPrice() const {
+        return _m_price;
+    }
 
     
+    virtual std::string getSpecificInfo() const = 0;
 
-    static void printModel() 
-    {
-        for (Model* model : models) 
-        {
-            std::cout << "ID" << model->id << std::endl;
-            std::cout << "Name" << model->name << std::endl;
-            std::cout << "Prize" << model->reference_price << std::endl;
-            std::cout << "Product type: " << model->product_type << std::endl;
-        }
-    }
-};
-std::vector<Model*> Model::models;
-
-
-class Product 
-{
-public:
-    int id;
-    std::string name;
-    int price;
-    virtual std::string getSpecificInfo() = 0;
+private:
+    int _m_id;
+    std::string _m_name;
+    int _m_price;
 };
 
 class Chair : public Product {
 public:
-    std::string material;
-    std::string color;
-    Chair(int id, std::string name, int price, std::string material, std::string color)
-        :material(material), color(color) 
+    Chair(int id, const std::string& name, int price)
+        : Product(id, name, price)
     {
-        this->id = id;
-        this->name = name;
-        this->price = price;
     }
-    std::string getSpecificInfo() override 
-    {
+    ~Chair(){}
+    std::string getSpecificInfo() const override {
         return "Chair specific info";
     }
 };
 
-class Table : public Product
-{
+class Table : public Product {
 public:
-    std::string material;
-    std::string shape;
-    Table(int id, std::string name, int price, std::string material, std::string shape)
-        :material(material), shape(shape)
+    Table(int id, const std::string& name, int price)
+        : Product(id, name, price)
     {
-        this->id = id;
-        this->name = name;
-        this->price = price;
     }
-    std::string getSpecificInfo() override 
-    {
+    ~Table(){}
+    std::string getSpecificInfo() const override {
         return "Table specific info";
     }
 };
-class Cabinet : public Product 
-{
+
+
+class Cabinet : public Product {
 public:
-    std::string material;
-    int num_drawers;
-    Cabinet(int id, std::string name, int price, std::string material, int num_drawers)
-        :material(material), num_drawers(num_drawers)
+    Cabinet(int id, const std::string& name, int price)
+        : Product(id, name, price)
     {
-        this->id = id;
-        this->name = name;
-        this->price = price;
-    };
-    std::string getSpecificInfo() override 
-    {
+    }
+
+    std::string getSpecificInfo() const override {
         return "Cabinet specific info";
     }
 };
 
-class Store
-{
-private:
-    std::vector<Product*> products;
-    static Store* instance;
-    Store(){}
+
+class ModelList {
 public:
-    static Store* getInstance() {
-        if (instance == nullptr) {
-            instance = new Store();
+    
+    void addModel(const Model& model) {
+        m_models.push_back(model);
+    }
+
+   
+    void printList() const {
+        for (const auto& model : m_models) {
+            std::cout << "Model ID: " << model.getId() << ", Name: " << model.getName()
+                << ", Reference Price: " << model.getReferencePrice() << std::endl;
         }
+    }
+
+private:
+    std::vector<Model> m_models;
+};
+
+class Store {
+public:
+    void addProduct(const std::shared_ptr<Product>& product) {
+        m_products.push_back(product);
+    }
+
+    void printList() const {
+        for (const auto& product : m_products) {
+            std::cout << "Product ID: " << product->getId() << ", Name: " << product->getName()
+                << ", Price: " << product->getPrice() << ", Specific Info: "
+                << product->getSpecificInfo() << std::endl;
+        }
+    }
+
+    static Store& getInstance() {
+        static Store instance;
         return instance;
     }
-    void addProduct(Product* product) {
-        products.push_back(product);
-    }
 
-    void printProductList() {
-        for (Product* product : products) {
-            std::cout << "ID" << product->id << std::endl;
-            std::cout << "Name" << product->name << std::endl;
-            std::cout << "Price" << product->price << std::endl;
-            std::cout << "Specific info" << product->getSpecificInfo() << std::endl;
-        }
-    }
-};
-Store* Store::instance = nullptr;
-
-class Factory
-{
 private:
-    static std::map<int, Model*> models;
-    static std::map<std::string, Model*> model_names;
+    Store() {}
+    ~Store(){}
+    std::vector<std::shared_ptr<Product>> m_products;
+};
+
+class Factory {
 public:
-    static void addModel(Model* model) {
-        models[model->id] = model;
-        model_names[model->name] = model;
+ 
+        static std::shared_ptr<Product> createProductByName(const std::string & modelName) {
+        const auto& models = ModelList::getInstance().getModels();
+        for (const auto& model : models) {
+            if (model.getName() == modelName) {
+                return createProductByType(model.getType(), model.getName(), model.getReferencePrice());
+            }
+        }
+        return nullptr;
     }
-    static Product* createProduct(int model_id)
-    {
-        Model* model = models[model_id];
-        switch (model->product_type)
-        {
-        case Model::CHAIR:
-            return new Chair(model->id, model->name, model->reference_price, "material", "color");
-        case Model::TABLE:
-            return new Table(model->id, model->name, model->reference_price, "material", "shape");
-        case Model::CABINET:
-            return new Cabinet(model->id, model->name, model->reference_price, "material", 4);
+
+    static std::shared_ptr<Product> createProductById(int modelId) {
+        const auto& models = ModelList::getInstance().getModels();
+        for (const auto& model : models) {
+            if (model.getId() == modelId) {
+                return createProductByType(model.getType(), model.getName(), model.getReferencePrice());
+            }
+        }
+        return nullptr;
+    }
+
+private:
+    
+    static std::shared_ptr<Product> createProductByType(ProductType type, const std::string& name, int referencePrice) {
+        switch (type) {
+        case ProductType::CHAIR:
+            return std::make_shared<Chair>(0, name, referencePrice);
+        case ProductType::TABLE:
+            return std::make_shared<Table>(0, name, referencePrice);
+        case ProductType::CABINET:
+            return std::make_shared<Cabinet>(0, name, referencePrice);
         default:
             return nullptr;
-            break;
         }
     }
-    static Product* createProduct(std::string model_name) {
-        Model* model = model_names[model_name];
-        return createProduct(model->id);
-    }
 };
-std::map<int, Model*> Factory::models;
-std::map<std::string, Model*> Factory::model_names;
-int main()
-{
-    Model* model1 = new Model(1, "chair a", 100, Model::CHAIR);
-    Model* model2 = new Model(2, "Table b", 100, Model::TABLE);
-    Model* model3 = new Model(3, "Cabinet a", 100, Model::CABINET);
 
-   /* Model::addModel(model1);
-    Model::addModel(model2);
-    Model::addModel(model3);*/
+class ModelList {
+public:
+    
+    void addModel(const Model& model) {
+        _m_models.push_back(model);
+    }
 
-    Factory::addModel(model1);
-    Product* product1 = Factory::createProduct(1);
-    Product* product2 = Factory::createProduct("Table B");
+   
+    void printList() const {
+        for (const auto& model : _m_models) {
+            std::cout << "Model ID: " << model.getId() << ", Name: " << model.getName()
+                << ", Reference Price: " << model.getReferencePrice() << std::endl;
+        }
+    }
 
-    Store* store = Store::getInstance();
-    store->addProduct(product1);
-    store->addProduct(product2);
+   
+    const std::vector<Model>& getModels() const {
+        return _m_models;
+    }
 
-    Model::printModel();
-    store->printProductList();
+    static ModelList& getInstance() {
+        static ModelList instance;
+        return instance;
+    }
+
+private:
+    ModelList() {}
+    std::vector<Model> _m_models;
+};
+
+int main() {
+    
+    ModelList::getInstance().addModel(Model(1, "Chair Model 1", 100, ProductType::CHAIR));
+    ModelList::getInstance().addModel(Model(2, "Table Model 1", 200, ProductType::TABLE));
+    ModelList::getInstance().addModel(Model(3, "Cabinet Model 1", 300, ProductType::CABINET));
+
+    
+    std::cout << "Model List:" << std::endl;
+    ModelList::getInstance().printList();
+
+  
+    auto product1 = Factory::createProductById(1);
+    auto product2 = Factory::createProductByName("Table Model 1");
+    auto product3 = Factory::createProductById(3);
+
+    
+    Store::getInstance().addProduct(product1);
+    Store::getInstance().addProduct(product2);
+    Store::getInstance().addProduct(product3);
+
+    
+    std::cout << "Product List:" << std::endl;
+    Store::getInstance().printList();
+
     return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
